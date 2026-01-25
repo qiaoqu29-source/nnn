@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI聊天手机</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* 手机容器 */
+        .phone-container {
+            width: 360px;
+            height: 700px;
+            background: #121212;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+            border: 12px solid #000;
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            height: 30px;
+            background: #000;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .time {
+            font-size: 15px;
+            font-weight: 700;
+        }
+        
+        /* 桌面 */
+        .desktop {
+            height: calc(100% - 80px);
+            background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 壁纸 */
+        .wallpaper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(30, 60, 114, 0.7), rgba(42, 82, 152, 0.3)), 
+                        url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            opacity: 0.6;
+            z-index: 1;
+        }
+        
+        /* 图标容器 */
+        .icons-container {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-top: 40px;
+        }
+        
+        /* 应用图标 */
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .app-icon:hover {
+            transform: translateY(-5px);
+        }
+        
+        .app-icon .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 8px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        .app-icon .name {
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+        
+        /* 聊天图标 */
+        .chat-icon .icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* 设置图标 */
+        .settings-icon .icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        /* 设置图标位置 */
+        .settings-icon {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+        }
+        
+        /* 应用界面 */
+        .app-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #121212;
+            z-index: 10;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-screen.active {
+            transform: translateX(0);
+        }
+        
+        /* 应用标题栏 */
+        .app-header {
+            height: 60px;
+            background: rgba(30, 30, 30, 0.95);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .back-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        /* 聊天应用 */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            padding: 15px 20px;
+            background: rgba(30, 30, 30, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .character-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .character-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            margin-right: 10px;
+        }
+        
+        .create-character-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        .create-character-btn:hover {
+            opacity: 0.9;
+        }
+        
+        /* 消息区域 */
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(20, 20, 30, 0.8);
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .ai-message {
+            justify-content: flex-start;
+        }
+        
+        .message-bubble {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .ai-message .message-bubble {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-bottom-left-radius: 5px;
+        }
+        
+        /* 输入区域 */
+        .input-container {
+            padding: 15px 20px;
+            background: rgba(30, 30, 30, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+        }
+        
+        .message-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .send-button, .ai-response-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            margin-left: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+        }
+        
+        .send-button:hover, .ai-response-button:hover {
+            opacity: 0.9;
+        }
+        
+        /* 设置页面 */
+        .settings-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(20, 20, 30, 0.8);
+        }
+        
+        .settings-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .settings-title {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .settings-title i {
+            margin-right: 10px;
+            color: #667eea;
+        }
+        
+        .api-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            margin-bottom: 10px;
+            outline: none;
+        }
+        
+        .api-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .save-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.3s;
+        }
+        
+        .save-button:hover {
+            opacity: 0.9;
+        }
+        
+        /* 底部导航栏 */
+        .dock {
+            height: 80px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .dock-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .dock-icon.active {
+            color: #667eea;
+        }
+        
+        .dock-icon i {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        
+        /* 角色创建模态框 */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: #1e1e1e;
+            width: 85%;
+            max-width: 400px;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-title {
+            color: white;
+            font-size: 22px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .character-option {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+        
+        .character-option:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-3px);
+        }
+        
+        .character-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .character-name {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .character-desc {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+        
+        /* 时间更新动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 400px) {
+            .phone-container {
+                width: 320px;
+                height: 650px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 手机容器 -->
+    <div class="phone-container">
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="time" id="current-time">12:00</div>
+            <div class="status-icons">
+                <i class="fas fa-signal"></i>
+                <i class="fas fa-wifi" style="margin: 0 8px;"></i>
+                <i class="fas fa-battery-three-quarters"></i>
+            </div>
+        </div>
+        
+        <!-- 手机桌面 -->
+        <div class="desktop">
+            <div class="wallpaper"></div>
+            
+            <!-- 应用图标 -->
+            <div class="icons-container">
+                <!-- 聊天应用图标 -->
+                <div class="app-icon chat-icon" id="chat-app-icon">
+                    <div class="icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <div class="name">聊天</div>
+                </div>
+                
+                <!-- 其他应用图标占位 -->
+                <div class="app-icon">
+                    <div class="icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div class="name">相机</div>
+                </div>
+                
+                <div class="app-icon">
+                    <div class="icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="name">音乐</div>
+                </div>
+                
+                <div class="app-icon">
+                    <div class="icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="name">邮件</div>
+                </div>
+                
+                <div class="app-icon">
+                    <div class="icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="name">日历</div>
+                </div>
+                
+                <div class="app-icon">
+                    <div class="icon" style="background: linear-gradient(135deg, #5ee7df 0%, #b490ca 100%);">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="name">地图</div>
+                </div>
+                
+                <!-- 设置应用图标 -->
+                <div class="app-icon settings-icon" id="settings-app-icon">
+                    <div class="icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="name">设置</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航栏 -->
+        <div class="dock">
+            <div class="dock-icon active" id="home-dock">
+                <i class="fas fa-home"></i>
+                <span>主页</span>
+            </div>
+            <div class="dock-icon" id="search-dock">
+                <i class="fas fa-search"></i>
+                <span>搜索</span>
+            </div>
+            <div class="dock-icon" id="chat-dock">
+                <i class="fas fa-comment-dots"></i>
+                <span>聊天</span>
+            </div>
+            <div class="dock-icon" id="profile-dock">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </div>
+        </div>
+        
+        <!-- 聊天应用界面 -->
+        <div class="app-screen" id="chat-app">
+            <div class="app-header">
+                <button class="back-button" id="back-from-chat">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="app-title">AI聊天</div>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="character-info">
+                        <div class="character-avatar" id="current-character-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <div id="current-character-name">AI助手</div>
+                            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">点击选择角色</div>
+                        </div>
+                    </div>
+                    <button class="create-character-btn" id="create-character-btn">创建角色</button>
+                </div>
+                
+                <div class="messages-container" id="messages-container">
+                    <!-- 消息会动态添加到这里 -->
+                    <div class="message ai-message">
+                        <div class="message-bubble">
+                            你好！我是您的AI助手。请先选择一个聊天角色，然后我们就可以开始聊天了！
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-container">
+                    <input type="text" class="message-input" id="message-input" placeholder="输入消息...">
+                    <button class="send-button" id="send-button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button class="ai-response-button" id="ai-response-button">
+                        <i class="fas fa-robot"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 设置应用界面 -->
+        <div class="app-screen" id="settings-app">
+            <div class="app-header">
+                <button class="back-button" id="back-from-settings">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="app-title">设置</div>
+            </div>
+            
+            <div class="settings-container">
+                <div class="settings-section">
+                    <div class="settings-title">
+                        <i class="fas fa-key"></i> API设置
+                    </div>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 15px; font-size: 14px;">
+                        请输入您的API密钥以启用AI聊天功能。您可以在AI服务提供商的网站上获取API密钥。
+                    </p>
+                    <input type="text" class="api-input" id="api-key-input" placeholder="输入API密钥">
+                    <input type="text" class="api-input" id="api-endpoint-input" placeholder="API端点 (可选)">
+                    <button class="save-button" id="save-api-button">保存设置</button>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-title">
+                        <i class="fas fa-sliders-h"></i> 聊天设置
+                    </div>
+                    <div style="color: rgba(255, 255, 255, 0.7); margin-bottom: 10px; font-size: 14px;">
+                        AI回复速度
+                    </div>
+                    <input type="range" min="1" max="5" value="3" class="api-input" id="response-speed">
+                    
+                    <div style="color: rgba(255, 255, 255, 0.7); margin-top: 20px; margin-bottom: 10px; font-size: 14px;">
+                        回复风格
+                    </div>
+                    <select class="api-input" id="response-style">
+                        <option value="balanced">平衡</option>
+                        <option value="creative">创意</option>
+                        <option value="precise">精确</option>
+                    </select>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-title">
+                        <i class="fas fa-info-circle"></i> 关于
+                    </div>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 10px; font-size: 14px;">
+                        AI聊天手机 v1.0
+                    </p>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px;">
+                        这是一个模拟手机界面的AI聊天应用。您可以通过设置API密钥来启用真实的AI聊天功能。
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 角色创建模态框 -->
+        <div class="modal" id="character-modal">
+            <div class="modal-content">
+                <div class="modal-title">选择聊天角色</div>
+                
+                <div class="character-option" data-character="assistant">
+                    <div class="character-name">AI助手</div>
+                    <div class="character-desc">通用AI助手，可以回答各种问题</div>
+                </div>
+                
+                <div class="character-option" data-character="creative">
+                    <div class="character-name">创意作家</div>
+                    <div class="character-desc">帮助你进行创意写作和头脑风暴</div>
+                </div>
+                
+                <div class="character-option" data-character="coder">
+                    <div class="character-name">编程专家</div>
+                    <div class="character-desc">解答编程问题，提供代码示例</div>
+                </div>
+                
+                <div class="character-option" data-character="teacher">
+                    <div class="character-name">教师</div>
+                    <div class="character-desc">解释复杂概念，帮助学习新知识</div>
+                </div>
+                
+                <div style="display: flex; margin-top: 20px;">
+                    <button class="save-button" id="select-character-btn" style="margin-right: 10px;">选择角色</button>
+                    <button class="save-button" id="close-modal-btn" style="background: rgba(255, 255, 255, 0.1);">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新时间
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+            document.getElementById('current-time').textContent = timeString;
+        }
+        
+        // 初始更新时间
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // DOM元素
+        const chatAppIcon = document.getElementById('chat-app-icon');
+        const settingsAppIcon = document.getElementById('settings-app-icon');
+        const chatApp = document.getElementById('chat-app');
+        const settingsApp = document.getElementById('settings-app');
+        const backFromChat = document.getElementById('back-from-chat');
+        const backFromSettings = document.getElementById('back-from-settings');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const aiResponseButton = document.getElementById('ai-response-button');
+        const messagesContainer = document.getElementById('messages-container');
+        const characterModal = document.getElementById('character-modal');
+        const createCharacterBtn = document.getElementById('create-character-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const selectCharacterBtn = document.getElementById('select-character-btn');
+        const characterOptions = document.querySelectorAll('.character-option');
+        const currentCharacterName = document.getElementById('current-character-name');
+        const currentCharacterAvatar = document.getElementById('current-character-avatar');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const apiEndpointInput = document.getElementById('api-endpoint-input');
+        const saveApiButton = document.getElementById('save-api-button');
+        
+        // 应用状态
+        let currentScreen = 'desktop';
+        let selectedCharacter = 'assistant';
+        let apiKey = '';
+        let apiEndpoint = '';
+        let messageHistory = [];
+        
+        // 从localStorage加载设置
+        function loadSettings() {
+            const savedApiKey = localStorage.getItem('aiChatApiKey');
+            const savedApiEndpoint = localStorage.getItem('aiChatApiEndpoint');
+            const savedCharacter = localStorage.getItem('aiChatCharacter');
+            
+            if (savedApiKey) {
+                apiKey = savedApiKey;
+                apiKeyInput.value = savedApiKey;
+            }
+            
+            if (savedApiEndpoint) {
+                apiEndpoint = savedApiEndpoint;
+                apiEndpointInput.value = savedApiEndpoint;
+            }
+            
+            if (savedCharacter) {
+                selectedCharacter = savedCharacter;
+                updateCharacterUI(savedCharacter);
+            }
+        }
+        
+        // 保存设置到localStorage
+        function saveSettings() {
+            localStorage.setItem('aiChatApiKey', apiKey);
+            localStorage.setItem('aiChatApiEndpoint', apiEndpoint);
+            localStorage.setItem('aiChatCharacter', selectedCharacter);
+        }
+        
+        // 更新角色UI
+        function updateCharacterUI(character) {
+            const characterData = {
+                assistant: { name: 'AI助手', icon: 'fas fa-robot', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+                creative: { name: '创意作家', icon: 'fas fa-pen-nib', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+                coder: { name: '编程专家', icon: 'fas fa-code', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+                teacher: { name: '教师', icon: 'fas fa-chalkboard-teacher', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }
+            };
+            
+            const data = characterData[character] || characterData.assistant;
+            currentCharacterName.textContent = data.name;
+            currentCharacterAvatar.innerHTML = `<i class="${data.icon}"></i>`;
+            currentCharacterAvatar.style.background = data.color;
+        }
+        
+        // 显示屏幕
+        function showScreen(screen) {
+            // 隐藏所有屏幕
+            document.querySelectorAll('.app-screen').forEach(app => {
+                app.classList.remove('active');
+            });
+            
+            // 显示目标屏幕
+            if (screen === 'chat') {
+                chatApp.classList.add('active');
+                currentScreen = 'chat';
+                // 聚焦到输入框
+                setTimeout(() => {
+                    messageInput.focus();
+                }, 300);
+            } else if (screen === 'settings') {
+                settingsApp.classList.add('active');
+                currentScreen = 'settings';
+            } else {
+                currentScreen = 'desktop';
+            }
+        }
+        
+        // 添加消息到聊天
+        function addMessage(text, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.textContent = text;
+            
+            messageDiv.appendChild(bubbleDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            // 滚动到底部
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // 保存到历史记录
+            messageHistory.push({ text, isUser });
+        }
+        
+        // 模拟AI回复
+        function getAIResponse(userMessage, character) {
+            const responses = {
+                assistant: [
+                    "我理解您的问题。作为一个AI助手，我可以帮助您解答各种问题。",
+                    "这是一个很好的问题！让我思考一下如何最好地回答您。",
+                    "根据我的知识，我可以告诉您...",
+                    "谢谢您的提问！我很乐意帮助您解决这个问题。"
+                ],
+                creative: [
+                    "从创意的角度来看，这个问题可以有很多有趣的解释...",
+                    "让我为您编织一个富有想象力的回答...",
+                    "在艺术和创造力的世界里，我们可以这样思考...",
+                    "这是一个激发灵感的话题！让我们探索各种可能性..."
+                ],
+                coder: [
+                    "从编程的角度来看，这个问题可以通过以下代码解决...",
+                    "这个算法问题可以使用递归方法处理...",
+                    "让我为您提供一个代码示例...",
+                    "在软件开发中，这个问题通常这样解决..."
+                ],
+                teacher: [
+                    "让我以教学的方式为您解释这个概念...",
+                    "为了更好地理解，我们可以从基本原理开始...",
+                    "这是一个重要的知识点，让我为您详细讲解...",
+                    "学习这个主题的关键在于掌握几个核心概念..."
+                ]
+            };
+            
+            const characterResponses = responses[character] || responses.assistant;
+            return characterResponses[Math.floor(Math.random() * characterResponses.length)];
+        }
+        
+     
